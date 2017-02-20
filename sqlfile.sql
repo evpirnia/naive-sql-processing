@@ -1,1 +1,1 @@
-select * from dtables;
+select * from candy;
