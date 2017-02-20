@@ -67,34 +67,26 @@ def runDDL(argv):
     except pymysql.OperationalError:
         print("[", catalog.url, "]:", ddlfile, " failed.")
 
-    # run sql commands
-    for n in nodes:
-        for s in sqlcmds:
-            try:
-                connect = pymysql.connect(n.hostname, n.username, n.passwd, n.db)
-                cur = connect.cursor()
-                cur.execute(s)
-                data = cur.fetchall()
-                for d in data:
-                    print(d)
-                print("[", n.url, "]:", ddlfile, " succeded.")
-                connect.close()
-            except pymysql.ProgrammingError:
-                print("[", n.url, "]:", ddlfile, " failed.")
+    # run sql commands via threading
+    threads = []
+    for s in sqlcmds:
+        for n in nodes:
+            threads.append(NodeThread(n, s, ddlfile).start())
 
     k.close()
 
-def runCommands(node, cmd, ddlfile):
+def runCommands(n, s, ddlfile):
     try:
-        connect = pymysql.connect(node.hostname, node.username, node.passwd, node.db)
+        connect = pymysql.connect(n.hostname, n.username, n.passwd, n.db)
         cur = connect.cursor()
-        cur.execute(cmd)
+        cur.execute(s)
+        data = cur.fetchall()
+        for d in data:
+            print(d)
+        print("[", n.url, "]:", ddlfile, " succeded.")
         connect.close()
-        print("[", node.url, "]:", ddlfile, " success.")
-    except pymysql.InternalError:
-        print("[", node.url, "]:", ddlfile, " failed.")
-    except pymysql.OperationalError:
-        print("[", node.url, "]:", ddlfile, " failed to connect to server.")
+    except pymysql.ProgrammingError:
+        print("[", n.url, "]:", ddlfile, " failed.")
 
 class NodeThread(threading.Thread):
     def __init__(self, node, cmd, ddlfile):

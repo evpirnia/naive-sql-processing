@@ -1,1 +1,1 @@
-select * from movies;
+select * from candy;
