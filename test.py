@@ -46,32 +46,41 @@ def runDDL(argv):
     sqlcmds = list(filter(None, k.read().strip().replace("\n","").split(';')))
 
     # Read Catalog Contents and Create Nodes
-    for n in sqlcmds:
-        try:
-            connect = pymysql.connect(catalog.hostname, catalog.username, catalog.passwd, catalog.db)
-            cur = connect.cursor()
-            cur.execute(n)
-            data = cur.fetchall()
-            for d in data:
-                tname = d[0]
-                nodedriver = d[1]
-                nodeurl = d[2]
-                nodeuser = d[3]
-                nodepasswd = d[4]
-                nodeid = d[6]
-                port = str(nodeurl).split("/", 2)[2].split(":")[1].split("/")[0]
-                db = str(nodeurl).split("/", 2)[2].split(":")[1].split("/")[1]
-                nodes.append(Node(str(hostname), str(nodeuser), str(nodepasswd), str(db), int(nodeid), str(nodeurl), str(port)))
-            connect.close()
-        except pymysql.OperationalError:
-            print("[", node.url, "]:", ddlfile, " failed.")
-
-    # Display Nodes Read In
-    for n in nodes:
-        n.displayNode()
+    cmd = "select * from dtables"
+    try:
+        connect = pymysql.connect(catalog.hostname, catalog.username, catalog.passwd, catalog.db)
+        cur = connect.cursor()
+        cur.execute(cmd)
+        data = cur.fetchall()
+        for d in data:
+            tname = d[0]
+            nodedriver = d[1]
+            nodeurl = d[2]
+            nodeuser = d[3]
+            nodepasswd = d[4]
+            nodeid = d[6]
+            hostname = str(nodeurl).split("/", 2)[2].split(":")[0]
+            port = str(nodeurl).split("/", 2)[2].split(":")[1].split("/")[0]
+            db = str(nodeurl).split("/", 2)[2].split(":")[1].split("/")[1]
+            nodes.append(Node(str(hostname), str(nodeuser), str(nodepasswd), str(db), int(nodeid), str(nodeurl), str(port)))
+        connect.close()
+    except pymysql.OperationalError:
+        print("[", catalog.url, "]:", ddlfile, " failed.")
 
     # run sql commands
-    
+    for n in nodes:
+        for s in sqlcmds:
+            try:
+                connect = pymysql.connect(n.hostname, n.username, n.passwd, n.db)
+                cur = connect.cursor()
+                cur.execute(s)
+                data = cur.fetchall()
+                for d in data:
+                    print(d)
+                print("[", n.url, "]:", ddlfile, " succeded.")
+                connect.close()
+            except pymysql.ProgrammingError:
+                print("[", n.url, "]:", ddlfile, " failed.")
 
     k.close()
 
@@ -122,7 +131,7 @@ class Catalog:
             cur.execute("""CREATE TABLE dtables (tname VARCHAR(32), nodedriver VARCHAR(64), nodeurl VARCHAR(128), nodeuser VARCHAR(16), nodepasswd VARCHAR(16), partmtd INT, nodeid INT, partcol VARCHAR(32), partparam1 VARCHAR(32), partparam2 VARCHAR(32))""")
             connect.close()
         except pymysql.InternalError:
-            print("Catalog Already Exists")
+            pass
 
 class Node:
     'Base Class for Nodes'
