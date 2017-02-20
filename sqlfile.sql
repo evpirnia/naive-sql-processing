@@ -1,0 +1,1 @@
+CREATE TABLE cats(isbn VARCHAR(20), title VARCHAR(80), price DECIMAL);
