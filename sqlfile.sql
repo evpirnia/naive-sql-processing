@@ -1,1 +1,1 @@
-select * from candy;
+select * from candy2;
