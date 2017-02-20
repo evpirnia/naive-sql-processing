@@ -20,8 +20,7 @@ def runDDL(argv):
     # Takes in Command Line Arguments for files
     fname, clustercfg, ddlfile = argv
 
-    # Reads clustercfg file line by line
-    # Parses contents and creates a Cluster object for every catalog or node read in
+    # Reads clustercfg file line by line for catalog information
     k = open(clustercfg, "r")
     with open(clustercfg) as fin:
         for line in fin:
@@ -41,39 +40,38 @@ def runDDL(argv):
                         passwd = temp[1]
                         catalog = Catalog(hostname, username, passwd, db, url)
                         catalog.createCatalog()
-                elif temp[0].split(".")[0].find("numnodes") > -1:
-                    pass
-                elif temp[0].split(".")[0].find("node") > -1:
-                    if temp[0].split(".")[1].find("driver") > -1:
-                        pass
-                    elif temp[0].split(".")[1].find("hostname") > -1:
-                        url = temp[1]
-                        hostname = temp[1].split("/", 2)[2].split(":")[0]
-                        port = temp[1].split("/", 2)[2].split(":")[1].split("/")[0]
-                        db = temp[1].split("/", 2)[2].split(":")[1].split("/")[1]
-                    elif temp[0].split(".")[1].find("username") > -1:
-                        username = temp[1]
-                    elif temp[0].split(".")[1].find("passwd") > -1:
-                        num = num + 1
-                        passwd = temp[1]
-                        nodes.append(Node(hostname, username, passwd, db, num, url, port))
 
     # Reads ddlfile, Remove Whitespace, Remove new lines, Parse contents on ';'
     k = open(ddlfile, "r")
     sqlcmds = list(filter(None, k.read().strip().replace("\n","").split(';')))
 
-    # Run Commands from ddlfile on each Thread
-    threads = []
-    table = ""
-    for cmd in sqlcmds:
-        # Find table name
-        table = cmd.split("TABLE ")[1].split("(")[0]
-        for n in nodes:
-            threads.append(NodeThread(n, cmd, ddlfile).start())
+    # Read Catalog Contents and Create Nodes
+    for n in sqlcmds:
+        try:
+            connect = pymysql.connect(catalog.hostname, catalog.username, catalog.passwd, catalog.db)
+            cur = connect.cursor()
+            cur.execute(n)
+            data = cur.fetchall()
+            for d in data:
+                tname = d[0]
+                nodedriver = d[1]
+                nodeurl = d[2]
+                nodeuser = d[3]
+                nodepasswd = d[4]
+                nodeid = d[6]
+                port = str(nodeurl).split("/", 2)[2].split(":")[1].split("/")[0]
+                db = str(nodeurl).split("/", 2)[2].split(":")[1].split("/")[1]
+                nodes.append(Node(str(hostname), str(nodeuser), str(nodepasswd), str(db), int(nodeid), str(nodeurl), str(port)))
+            connect.close()
+        except pymysql.OperationalError:
+            print("[", node.url, "]:", ddlfile, " failed.")
 
+    # Display Nodes Read In
     for n in nodes:
-        catalog.updateCatalog(table, n)
-    print("[", catalog.url, "]: catalog updated.")
+        n.displayNode()
+
+    # run sql commands
+    
 
     k.close()
 
@@ -106,7 +104,7 @@ class Catalog:
         self.passwd = passwd.replace(" ", "")
         self.db = db.replace(" ", "")
         self.url = url
-    def displayCatalog(self):
+    def displayCatalogInfo(self):
         print("Hostname: ", self.hostname, " Username: ", self.username, " Passwd: ", self.passwd, " DB: ", self.db)
     def updateCatalog(self, table, n):
         try:
@@ -124,7 +122,7 @@ class Catalog:
             cur.execute("""CREATE TABLE dtables (tname VARCHAR(32), nodedriver VARCHAR(64), nodeurl VARCHAR(128), nodeuser VARCHAR(16), nodepasswd VARCHAR(16), partmtd INT, nodeid INT, partcol VARCHAR(32), partparam1 VARCHAR(32), partparam2 VARCHAR(32))""")
             connect.close()
         except pymysql.InternalError:
-            pass
+            print("Catalog Already Exists")
 
 class Node:
     'Base Class for Nodes'
