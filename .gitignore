@@ -1,1 +1,6 @@
+<<<<<<< HEAD
 catalog/ubuntu-xenial-16.04-cloudimg-console.log
+=======
+*.log
+.DS_Store
+>>>>>>> d39bfbe8c0de5eda0a1cf371914eb2fadd121176
