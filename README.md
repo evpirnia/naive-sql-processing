@@ -3,11 +3,7 @@ https://lipyeow.github.io/ics421s17/morea/queryproc/experience-hw2.html
 
 Using your code from Part 1 as a template, write a program runSQL that executes a given SQL statement on a cluster of computers each running an instance of a DBMS. The input to runSQL consists of two filenames (stored in variables clustercfg and sqlfile) passed in as commandline arguments. The file clustercfg contains access information for the catalog DB. The file sqlfile contains the SQL terminated by a semi-colon to be executed. The runSQL program will execute the same SQL on the database instance of each of the computers on the cluster (that holds data fragments for the table) concurrently using threads. One thread should be spawned for each computer in the cluster. The runSQL programm should output the rows retrieved to the standard output on success or report failure.<br />
 
-You may assumed that the SQL queries only operate on single tables and do not contain any nested subqueries.<br />
-
-You should consider using the ANTLR compiler compiler to generate a SQL parser that you can use to extract the table name.<br />
-
-You may test your program on a single computer by using different databases to simulate the multiple computers.<br />
+Write a program loadCSV that loads data from a comma-separated (CSV) file into a distributed table on the cluster. The program takes two commandline arguments clustercfg and csvfile. The clustercfg file contains access information for the catalog DB, the name of the table to be loaded, and the partitioning information. The csvfile contains the data to be loaded. The catalog should be consulted for access information for the nodes in the cluster. Your program should also update the catalog with the partitioning information. The loader does NOT need to be multi-threaded. You should use a library for parsing CSV instead of writing your own from scratch.<br />
 
 ===========================
 
@@ -76,6 +72,10 @@ Note: Password for MySQL-server: password<br />
 $ /usr/bin/mysql_secure_installation<br />
 Note: Respond No to everything but Remove test database and access to it, and Reload privilege tables<br />
 
+Run the following command then comment out the bind-address in the catalog and each machine: <br />
+$ sudo vim /etc/mysql/mysql.conf.d/mysqld.cnf<br />
+#bind-address = 127.0.0.1<br />
+
 Connect to MySQL in Each Directory:<br />
 $ mysql -u root -p;<br />
 Enter password: 'password'<br />
@@ -105,7 +105,6 @@ mysql> create table movies (title char(80), released int(4), rating int (2));<br
 mysql> insert into movies values ('Bad Boys 1', '1995', '4');<br />
 mysql> insert into movies values ('Bad Boys 2', '2003', '5');<br />
 mysql> insert into movies values ('Split', '2017', '5');<br />
-
 
 Insert the existing tables into dtables of the catalog machine:<br />
 mysql> use TESTDB;<br />
