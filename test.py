@@ -4,7 +4,7 @@ import threading
 import sys
 from sys import argv
 
-def runDDL(argv):
+def runSQL(argv):
     # Define variables
     hostname = ""
     username = ""
@@ -140,4 +140,4 @@ class Node:
     def displayNode(self):
         print("Hostname: ", self.hostname, " Username: ", self.username, " Passwd: ", self.passwd, " DB: ", self.db, " Num: ", self.num, " Url: ", self.url, " Port: ", self.port)
 
-runDDL(argv)
+runSQL(argv)
