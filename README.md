@@ -74,7 +74,7 @@ Note: Respond No to everything but Remove test database and access to it, and Re
 
 Run the following command then comment out the bind-address in the catalog and each machine: <br />
 $ sudo vim /etc/mysql/mysql.conf.d/mysqld.cnf<br />
-#bind-address = 127.0.0.1<br />
+bind-address = 127.0.0.1<br />
 
 Connect to MySQL in Each Directory:<br />
 $ mysql -u root -p;<br />
@@ -108,8 +108,8 @@ mysql> insert into movies values ('Split', '2017', '5');<br />
 
 Insert the existing tables into dtables of the catalog machine:<br />
 mysql> use TESTDB;<br />
-mysql> insert into dtables values ('candy', NULL, 'jdbc:mysql://192.168.10.10:3306/TESTDB', 'evelynp', 'netflix', NULL, '1', NULL, NULL, NULL);<br />
-mysql> insert into dtables values ('movies', NULL, 'jdbc:mysql://192.168.10.20:3306/TESTDB', 'blakela', 'hulu', NULL, '2', NULL, NULL, NULL);<br />
+mysql> ```insert into dtables values ('candy', NULL, 'jdbc:mysql://192.168.10.10:3306/TESTDB', 'evelynp', 'netflix', NULL, '1', NULL, NULL, NULL);```<br />
+mysql> ```insert into dtables values ('movies', NULL, 'jdbc:mysql://192.168.10.20:3306/TESTDB', 'blakela', 'hulu', NULL, '2', NULL, NULL, NULL);```<br />
 Note: The nodeurl has the specific user's ip address (ie. .10 or .20). nodeid, nodeuser, nodepasswd also correspond with the specific user. <br />
 
 Run the script from your local host repo:<br />
