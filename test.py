@@ -85,6 +85,8 @@ def runCommands(n, s, ddlfile):
             print(d)
         print("[", n.url, "]:", ddlfile, " success.")
         connect.close()
+    except pymysql.OperationalError:
+        print("[", n.url, "]:", ddlfile, " failed.")
     except pymysql.ProgrammingError:
         print("[", n.url, "]:", ddlfile, " failed.")
 
