@@ -93,18 +93,18 @@ mysql> grant all on TESTDB.* to username@'%' identified by 'password';<br />
 mysql> exit<br />
 $ exit<br />
 
-Create table for machine1 and insert some data:
+Create table for machine1 and insert some data:<br />
 mysql> use TESTDB;<br />
-mysql> create table candy (name char(80), chocolate(4), rating int (2));
-mysql> insert into candy values ('Sour Patch Kids', 'No', '5');
-mysql> insert into candy values ('Mike n Ikes', 'No', '1');
+mysql> create table candy (name char(80), chocolate(4), rating int (2));<br />
+mysql> insert into candy values ('Sour Patch Kids', 'No', '5');<br />
+mysql> insert into candy values ('Mike n Ikes', 'No', '1');<br />
 
-Create table for machine2 and insert some data:
+Create table for machine2 and insert some data:<br />
 mysql> use TESTDB;<br />
-mysql> create table movies (title char(80), released int(4), rating int (2));
-mysql> insert into movies values ('Bad Boys 1', '1995', '4');
-mysql> insert into movies values ('Bad Boys 2', '2003', '5');
-mysql> insert into movies values ('Split', '2017', '5');
+mysql> create table movies (title char(80), released int(4), rating int (2));<br />
+mysql> insert into movies values ('Bad Boys 1', '1995', '4');<br />
+mysql> insert into movies values ('Bad Boys 2', '2003', '5');<br />
+mysql> insert into movies values ('Split', '2017', '5');<br />
 
 
 Insert the existing tables into dtables of the catalog machine:<br />
