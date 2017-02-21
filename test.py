@@ -62,6 +62,7 @@ def runSQL(argv):
             hostname = str(nodeurl).split("/", 2)[2].split(":")[0]
             port = str(nodeurl).split("/", 2)[2].split(":")[1].split("/")[0]
             db = str(nodeurl).split("/", 2)[2].split(":")[1].split("/")[1]
+            print(tname, nodeurl, nodeuser, nodepasswd, nodeid, hostname, port, db)
             nodes.append(Node(str(hostname), str(nodeuser), str(nodepasswd), str(db), int(nodeid), str(nodeurl), str(port)))
         connect.close()
     except pymysql.OperationalError:
@@ -117,6 +118,8 @@ class Catalog:
             connect.commit()
             connect.close()
         except pymysql.InternalError:
+            print("Error")
+        except pymysql.OperationalError:
             print("Error")
     def createCatalog(self):
         try:
