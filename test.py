@@ -83,7 +83,7 @@ def runCommands(n, s, ddlfile):
         data = cur.fetchall()
         for d in data:
             print(d)
-        print("[", n.url, "]:", ddlfile, " succeded.")
+        print("[", n.url, "]:", ddlfile, " success.")
         connect.close()
     except pymysql.ProgrammingError:
         print("[", n.url, "]:", ddlfile, " failed.")
