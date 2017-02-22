@@ -1,4 +1,6 @@
-rating,title,lastname,firstname
-4,Database Systems,Ramakrishnan,Raghu
+name,chocolate,rating
 
-10,Operating Systems,Silberstein,Adam
+Handsome,No,0
+Handsome,Yes,1
+Handsome,No,10
+Handsome,Yes,4

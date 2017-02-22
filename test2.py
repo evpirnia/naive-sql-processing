@@ -39,7 +39,6 @@ def loadCSV(argv):
         for line in fin:
             if line.strip():
                 temp = line.strip().split("=")
-                # Printing Left Value =
                 if temp[0].split(".")[0].find("catalog") > -1:
                     if temp[0].split(".")[1].find("driver") > -1:
                         pass
@@ -92,30 +91,52 @@ def loadCSV(argv):
                         temp.append(param1)
                         mtd2info.append(temp)
 
-    # Read csv file with python3
     nodes = []
+    cmd = "select * from dtables"
+    try:
+        connect = pymysql.connect(catalog.hostname, catalog.username, catalog.passwd, catalog.db)
+        cur = connect.cursor()
+        cur.execute(cmd)
+        data = cur.fetchall()
+        for d in data:
+            nodes.append(Node(str(d[0]), str(d[2]).split("/", 2)[2].split(":")[0], str(d[3]), str(d[4]), str(str(d[2]).split("/", 2)[2].split(":")[1].split("/")[1]), d[6], str(d[2]), str(str(d[2]).split("/", 2)[2].split(":")[1].split("/")[0])))
+        connect.close()
+    except pymysql.OperationalError:
+        print("[", catalog.url, "]:", ddlfile, " failed.")
+
+    # print("dtables contents................")
+    # for n in nodes:
+    #     n.displayNode()
+
+    # Read csv file with python3
+    csvcontents = []
     with open(csvfile) as c:
         filtered = (line.replace('\n','') for line in c)
         reader = csv.reader(filtered, delimiter=',')
         header = next(reader)
         for row in reader:
             if any(field.strip() for field in row):
-                nodes.append(row)
+                csvcontents.append(row)
+
+    # print("csv contents.............")
+    # for c in csvcontents:
+    #     print(c)
+    # print("end csv contents.............")
 
     if partmtd == 0:
-        if len(nodes) != int(numnodes):
+        if len(csvcontents) != int(numnodes):
             print("Error")
         else:
-            catalog.insert0(nodes, tname)
+            catalog.insert0(header, nodes, csvcontents, tname)
     elif partmtd == 1:
-        if len(nodes) != int(numnodes):
+        if len(csvcontents) != int(numnodes):
             print("Error")
         else:
             for m in mtd1info:
-                catalog.insert1(header, nodes, int(m[0]), tname, m[1], int(m[2]), int(m[3]))
+                catalog.insert1(header, nodes, csvcontents, m, tname)
     elif partmtd == 2:
-        catalog.insert2(header, nodes, tname, mtd2info)
-
+        for m in mtd2info:
+            catalog.insert2(header, nodes, csvcontents, m, tname)
 class Catalog:
     'Base Class for Catalog'
     def __init__(self, hostname, username, passwd, db, url):
@@ -124,53 +145,89 @@ class Catalog:
         self.passwd = passwd.replace(" ", "")
         self.db = db.replace(" ", "")
         self.url = url
-    def insert0(self, nodes, tname):
-        print()
-        # for n in nodes:
-            # try to insert into table nodes
-            # update Catalog
-            # catch if error
-    def insert1(self, header, nodes, dnum, tname, col, p1, p2):
-        i = 0
+    def insert0(self, header, nodes, csvcontents, tname):
+        for n in nodes:
+            count = 0
+            for c in csvcontents:
+                if str(n.tname) == str(tname):
+                    count += n.updateNode(', '.join("'{0}'".format(w.strip()) for w in c))
+            print("[", n.url, "]:", count, " rows inserted.")
+            if count > 0:
+                self.updateCatalog(tname, n, 0, [])
+                print("updating catalog for node ", n.url)
+    def insert1(self, header, nodes, csvcontents, m, tname):
+        # m = {desired node num, col, p1, p2}
+        colindex = 0
         for h in header:
-            if h == col:
+            if h == m[1]:
                 break
             else:
-                i = i + 1
-        # if p1 < int(nodes[dnum-1][i]):
-        #     if int(nodes[dnum-1][i]) < p2:
-                # try to insert into table nodes
-                # updateCatalog
-                # catch if error
-    def insert2(self, header, nodes, tname, info):
-        for i in info:
-            col = i[0]
-            p1 = int(i[1])
-            i = 0
-            for h in header:
-                if h == col:
-                    break
-                else:
-                    i = i + 1
-            for n in nodes:
-                if int(n[i]) == ((i % p1) + 1):
-                    # try to insert into table nodes
-                    # updateCatalog
-                    # catch if error
+                colindex = colindex + 1
+        # select nodes from csvfile (stored in csvcontents) that match range partition (m)
+        # 0-based colindex
+        for n in nodes:
+            count = 0
+            for c in csvcontents:
+                if int(m[2]) < int(c[colindex-1]):
+                    if int(c[colindex-1]) <= int(m[3]):
+                        if str(n.tname) == str(tname):
+                            count += n.updateNode(', '.join("'{0}'".format(w.strip()) for w in c))
+            print("[", n.url, "]:", count, " rows inserted.")
+            if count > 0:
+                self.updateCatalog(tname, n, 1, m)
+                print("updating catalog for node ", n.url)
+    def insert2(self, header, nodes, csvcontents, m, tname):
+        print("insert2 ...........")
+        # m = {col, p1}
+        colindex = 0
+        for h in header:
+            if h == m[0]:
+                break
+            else:
+                colindex = colindex + 1
+        # select nodes from csvfile (stored in csvcontents) that match range partition (m)
+        for n in nodes:
+            count = 0
+            for c in csvcontents:
+                if int(c[colindex]) == (colindex % int(m[1])):
+                    if str(n.tname) == str(tname):
+                        count += n.updateNode(', '.join("'{0}'".format(w.strip()) for w in c))
+            print("[", n.url, "]:", count, " rows inserted.")
+            if count > 0:
+                self.updateCatalog(tname, n, 2, m)
+                print("updating catalog for node ", n.url)
+
     def displayCatalogInfo(self):
         print("Hostname: ", self.hostname, " Username: ", self.username, " Passwd: ", self.passwd, " DB: ", self.db)
-    def updateCatalog(self, table, driver, url, user, passwd, mtd, nodeid, col, param1, param2):
+    def updateCatalog(self, table, nodeinfo, mtd, methodinfo):
+        if mtd == 0:
+            nodeid = "NULL"
+            partcol = "NULL"
+            partp1 = "NULL"
+            partp2 = "NULL"
+            sql = "UPDATE dtables SET partmtd=%s, nodeid=%s, partcol=%s, partparam1=%s, partparam2=%s WHERE tname='%s'" % (mtd, nodeid, partcol, partp1, partp2, table)
+        if mtd == 1:
+            nodeid = methodinfo[0]
+            partcol = methodinfo[1]
+            partp1 = methodinfo[2]
+            partp2 = methodinfo[3]
+            sql = "UPDATE dtables SET partmtd='%s', nodeid='%s', partcol='%s', partparam1='%s', partparam2='%s' WHERE tname='%s'" % (mtd, nodeid, partcol, partp1, partp2, table)
+        elif mtd == 2:
+            nodeid = "NULL"
+            partcol = methodinfo[0]
+            partp1 = methodinfo[1]
+            partp2 = "NULL"
+            sql = "UPDATE dtables SET partmtd='%s', nodeid=%s, partcol='%s', partparam1='%s', partparam2=%s WHERE tname='%s'" % (mtd, nodeid, partcol, partp1, partp2, table)
         try:
-            print(n)
             connect = pymysql.connect(self.hostname, self.username, self.passwd, self.db)
             cur = connect.cursor()
-            cur.execute("""INSERT INTO dtables VALUES (%s, %s, %s, %s, %s, %d, %d, %s, %s, %s)""", (table, driver, url, user, passwd, mtd, nodeid, col, param1, param2))
+            cur.execute(sql)
             connect.commit()
             connect.close()
         except pymysql.InternalError:
-            print("Error")
+            print("InternalError")
         except pymysql.OperationalError:
-            print("Error")
+            print("OperationalError")
     def createCatalog(self):
         try:
             connect = pymysql.connect(self.hostname, self.username, self.passwd, self.db)
@@ -179,5 +236,33 @@ class Catalog:
             connect.close()
         except pymysql.InternalError:
             pass
+
+class Node:
+    'Base Class for Nodes'
+    def __init__(self, tname, hostname, username, passwd, db, num, url, port):
+        self.tname = tname.replace(" ", "")
+        self.hostname = hostname.replace(" ", "")
+        self.username = username.replace(" ", "")
+        self.passwd = passwd.replace(" ", "")
+        self.db = db.replace(" ", "")
+        self.num = num
+        self.url = url.replace(" ", "")
+        self.port = port.replace(" ", "")
+    def displayNode(self):
+        print("Table: ", self.tname, "Hostname: ", self.hostname, " Username: ", self.username, " Passwd: ", self.passwd, " DB: ", self.db, " Num: ", self.num, " Url: ", self.url, " Port: ", self.port)
+    def updateNode(self, values):
+        # add information from csv
+        try:
+            connect = pymysql.connect(self.hostname, self.username, self.passwd, self.db)
+            cur = connect.cursor()
+            sql = "INSERT INTO %s VALUES (%s)" % (self.tname, values)
+            cur.execute(sql)
+            connect.commit()
+            connect.close()
+            return 1
+        except pymysql.InternalError:
+            return 0
+        except pymysql.OperationalError:
+            return 0
 
 loadCSV(argv)

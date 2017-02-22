@@ -63,7 +63,8 @@ def runSQL(argv):
             port = str(nodeurl).split("/", 2)[2].split(":")[1].split("/")[0]
             db = str(nodeurl).split("/", 2)[2].split(":")[1].split("/")[1]
             print(tname, nodeurl, nodeuser, nodepasswd, nodeid, hostname, port, db)
-            nodes.append(Node(str(hostname), str(nodeuser), str(nodepasswd), str(db), int(nodeid), str(nodeurl), str(port)))
+            t = Node(hostname, nodeuser, db, nodeid, nodeurl, port)
+            nodes.append(t)
         connect.close()
     except pymysql.OperationalError:
         print("[", catalog.url, "]:", ddlfile, " failed.")
