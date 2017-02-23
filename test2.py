@@ -122,7 +122,6 @@ def loadCSV(argv):
     # for c in csvcontents:
     #     print(c)
     # print("end csv contents.............")
-
     if partmtd == 0:
         if len(csvcontents) != int(numnodes):
             print("Error")
@@ -168,8 +167,8 @@ class Catalog:
         for n in nodes:
             count = 0
             for c in csvcontents:
-                if int(m[2]) < int(c[colindex-1]):
-                    if int(c[colindex-1]) <= int(m[3]):
+                if int(m[2]) < int(c[colindex]):
+                    if int(c[colindex]) <= int(m[3]):
                         if str(n.tname) == str(tname):
                             count += n.updateNode(', '.join("'{0}'".format(w.strip()) for w in c))
             print("[", n.url, "]:", count, " rows inserted.")
@@ -177,7 +176,6 @@ class Catalog:
                 self.updateCatalog(tname, n, 1, m)
                 print("updating catalog for node ", n.url)
     def insert2(self, header, nodes, csvcontents, m, tname):
-        print("insert2 ...........")
         # m = {col, p1}
         colindex = 0
         for h in header:
