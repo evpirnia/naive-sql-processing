@@ -6,12 +6,34 @@ import sys
 from sys import argv
 
 def loadCSV(argv):
+    # Take in Command Line Arguments for files
     fname, clustercfg, csvfile = argv
+
+    # Print Contents of varaibles: clustercfg and csvfile
+    # print(clustercfg)
+    # print(csvfile)
+
+    # url = ""
+    # hostname = ""
+    # port = ""
+    # db = ""
+    # username = ""
+    # passwd = ""
+    # tname = ""
+    # nodedriver = ""
+    # nodeurl = ""
+    # nodeuser = ""
+    # nodepasswd = ""
+    # partmtd = ""
+    # partcol = ""
+    # partparam1 = ""
+    # partparam2 = ""
     partmtd = -1
     numnodes = -1
+
     mtd1info = []
     mtd2info = []
-
+    
     # Read clustercfg file line by line for catalog information
     k = open(clustercfg, "r")
     with open(clustercfg) as fin:
@@ -86,9 +108,8 @@ def loadCSV(argv):
     # print("dtables contents................")
     # for n in nodes:
     #     n.displayNode()
-    # print("end dtables contents................")
 
-    # Read csv file
+    # Read csv file with python3
     csvcontents = []
     with open(csvfile) as c:
         filtered = (line.replace('\n','') for line in c)
@@ -102,31 +123,20 @@ def loadCSV(argv):
     # for c in csvcontents:
     #     print(c)
     # print("end csv contents.............")
-
-    # all csv added to table
     if partmtd == 0:
         if len(csvcontents) != int(numnodes):
             print("Error")
         else:
             catalog.insert0(header, nodes, csvcontents, tname)
-    # numnodes in catalog relation and the number of partitons in the config files must be the same
-    # update nodes accordingly
     elif partmtd == 1:
         if len(csvcontents) != int(numnodes):
             print("Error")
         else:
             for m in mtd1info:
-                # print("m....")
-                # for n in m:
-                #     print(n)
-                # print("end m....")
                 catalog.insert1(header, nodes, csvcontents, m, tname)
-    # only values that meet hash function are added to table
     elif partmtd == 2:
         for m in mtd2info:
             catalog.insert2(header, nodes, csvcontents, m, tname)
-
-# Catalog Class
 class Catalog:
     'Base Class for Catalog'
     def __init__(self, hostname, username, passwd, db, url):
@@ -156,17 +166,16 @@ class Catalog:
         # select nodes from csvfile (stored in csvcontents) that match range partition (m)
         # 0-based colindex
         for n in nodes:
-            if(int(m[0]) == n.num):
-                count = 0
-                for c in csvcontents:
-                    if int(m[2]) < int(c[colindex]):
-                        if int(c[colindex]) <= int(m[3]):
-                            if str(n.tname) == str(tname):
-                                count += n.updateNode(', '.join("'{0}'".format(w.strip()) for w in c))
-                print("[", n.url, "]:", count, " rows inserted.")
-                if count > 0:
-                    self.updateCatalog(tname, n, 1, m)
-                    print("updating catalog for node ", n.url)
+            count = 0
+            for c in csvcontents:
+                if int(m[2]) < int(c[colindex]):
+                    if int(c[colindex]) <= int(m[3]):
+                        if str(n.tname) == str(tname):
+                            count += n.updateNode(', '.join("'{0}'".format(w.strip()) for w in c))
+            print("[", n.url, "]:", count, " rows inserted.")
+            if count > 0:
+                self.updateCatalog(tname, n, 1, m)
+                print("updating catalog for node ", n.url)
     def insert2(self, header, nodes, csvcontents, m, tname):
         # m = {col, p1}
         colindex = 0
@@ -201,8 +210,7 @@ class Catalog:
             partcol = methodinfo[1]
             partp1 = methodinfo[2]
             partp2 = methodinfo[3]
-            # sql = "UPDATE dtables SET partmtd='%s', nodeid='%s', partcol='%s', partparam1='%s', partparam2='%s' WHERE tname='%s'" % (mtd, nodeid, partcol, partp1, partp2, table)
-            sql = "UPDATE dtables SET partmtd='%s', partcol='%s', partparam1='%s', partparam2='%s' WHERE (tname='%s' && nodeid='%s')" % (mtd, partcol, partp1, partp2, table, nodeid)
+            sql = "UPDATE dtables SET partmtd='%s', nodeid='%s', partcol='%s', partparam1='%s', partparam2='%s' WHERE tname='%s'" % (mtd, nodeid, partcol, partp1, partp2, table)
         elif mtd == 2:
             nodeid = "NULL"
             partcol = methodinfo[0]
@@ -227,7 +235,7 @@ class Catalog:
             connect.close()
         except pymysql.InternalError:
             pass
-# Node Class
+
 class Node:
     'Base Class for Nodes'
     def __init__(self, tname, hostname, username, passwd, db, num, url, port):
