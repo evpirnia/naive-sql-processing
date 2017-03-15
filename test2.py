@@ -41,9 +41,6 @@ def loadCSV(argv):
                         partmtd = 1
                     elif temp[1].find("hash") > -1:
                         partmtd = 2
-                elif partmtd == 0:
-                    if temp[0].find("numnodes") > -1:
-                        numnodes = temp[1]
                 elif partmtd == 1:
                     if temp[0].find("numnodes") > -1:
                         numnodes = temp[1]
@@ -105,14 +102,13 @@ def loadCSV(argv):
 
     # all csv added to table
     if partmtd == 0:
-        if len(csvcontents) != int(numnodes):
-            print("Error")
-        else:
-            catalog.insert0(header, nodes, csvcontents, tname)
+        catalog.insert0(header, nodes, csvcontents, tname)
     # numnodes in catalog relation and the number of partitons in the config files must be the same
     # update nodes accordingly
     elif partmtd == 1:
-        if len(csvcontents) != int(numnodes):
+        # determine number of nodes from catalog
+        catalogNodes = catalog.countNodes(tname)
+        if(int(catalogNodes) != int(numnodes)):
             print("Error")
         else:
             for m in mtd1info:
@@ -186,7 +182,6 @@ class Catalog:
             if count > 0:
                 self.updateCatalog(tname, n, 2, m)
                 print("updating catalog for node ", n.url)
-
     def displayCatalogInfo(self):
         print("Hostname: ", self.hostname, " Username: ", self.username, " Passwd: ", self.passwd, " DB: ", self.db)
     def updateCatalog(self, table, nodeinfo, mtd, methodinfo):
@@ -219,6 +214,18 @@ class Catalog:
             print("InternalError")
         except pymysql.OperationalError:
             print("OperationalError")
+    def countNodes(self, tablename):
+        data = 0
+        cmd = "select count(tname) from dtables where tname='%s'" % (tablename)
+        try:
+            connect = pymysql.connect(self.hostname, self.username, self.passwd, self.db)
+            cur = connect.cursor()
+            cur.execute(cmd)
+            data = cur.fetchone()[0]
+            connect.close()
+        except pymysql.OperationalError:
+            print("[", catalog.url, "]:", ddlfile, " failed.")
+        return data
     def createCatalog(self):
         try:
             connect = pymysql.connect(self.hostname, self.username, self.passwd, self.db)
